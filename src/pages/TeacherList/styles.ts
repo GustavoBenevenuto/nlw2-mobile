@@ -7,17 +7,9 @@ const styles = StyleSheet.create({
         
     },
 
-    content: {
-        
-    },
-
-    title: {
-        
-    },
-
-    description: {
-        
-    },
+    teacherlist: {
+        marginTop: -60,
+    }
 });
 
 export default styles;

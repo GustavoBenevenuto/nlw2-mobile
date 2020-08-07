@@ -5,17 +5,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#8257E5',
     },
 
-    content: {
-        
-    },
-
-    title: {
-        
-    },
-
-    description: {
-        
-    },
+    teacherlist: {
+        marginTop: -60,
+    }
 });
 
 export default styles;
