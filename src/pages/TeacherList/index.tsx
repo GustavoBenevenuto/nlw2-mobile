@@ -1,19 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, ImageBackground, TextInput } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-community/async-storage';
 
 import styles from './styles';
 import PageHeader from '../../components/PageHeader';
 import TeacherItem from '../../components/TeacherItem';
 
 import { ScrollView, BorderlessButton, RectButton } from 'react-native-gesture-handler';
+import api from '../../service/api';
+
+interface TeacherData {
+    avatar: string;
+    bio: string;
+    cost: number;
+    id: number;
+    name: string;
+    subject:string;
+    user_id: number;
+    whatsapp: string;
+}
+
 
 const TeacherList = () => {
 
     const [isFiltersVisible, setIsFiltersVisible] = useState(false);
 
-    function handleRoggleFilterVisible(){
+    const [favorites, setFavorites] = useState<number[]>([]);
+    const [subject, setSubject] = useState('');
+    const [weekDay, setWeekDay] = useState('');
+    const [time, setTime] = useState('');
+    const [teachers, setTeachers] = useState([]);
+
+    function loadFavorites(){
+        AsyncStorage.getItem('favorites')
+        .then(response => {
+            if(response) {
+                const favoritedTeachers = JSON.parse(response);
+                
+                const favoritedTeachersIds = favoritedTeachers.map((item : TeacherData ) => {
+                    return item.id;
+                });
+
+                setFavorites(favoritedTeachersIds);
+            }
+        });
+    }
+
+    function handleToggleFilterVisible(){
         setIsFiltersVisible(!isFiltersVisible);
+    }
+
+    async function handleFiltersSubmit(){
+        
+        loadFavorites();
+        
+        try {
+            const response = await api.get('classes',{
+                params:{
+                    subject,
+                    week_day: weekDay,
+                    time,
+                }
+            });
+            console.log(response.data);
+            setTeachers(response.data);
+            handleToggleFilterVisible();
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     return (
@@ -21,7 +76,7 @@ const TeacherList = () => {
             <PageHeader 
                 title="Proffys disponíveis" 
                 headerRight={(
-                    <BorderlessButton onPress={handleRoggleFilterVisible}>
+                    <BorderlessButton onPress={handleToggleFilterVisible}>
                         <Feather name="filter" size={20} color="#FFF"/>
                     </BorderlessButton>
                 )}
@@ -32,6 +87,8 @@ const TeacherList = () => {
                         <TextInput
                             placeholderTextColor="#c1bccc"
                             style={styles.input}
+                            value={subject}
+                            onChangeText={(value) => setSubject(value)}
                             placeholder='Qual a matéria?'
                         />
 
@@ -41,6 +98,8 @@ const TeacherList = () => {
                                 <TextInput
                                     placeholderTextColor="#c1bccc"
                                     style={styles.input}
+                                    value={weekDay}
+                                    onChangeText={(value) => setWeekDay(value)}
                                     placeholder='Qual o dia?'
                                 />
                             </View>
@@ -50,12 +109,14 @@ const TeacherList = () => {
                                 <TextInput
                                     placeholderTextColor="#c1bccc"
                                     style={styles.input}
+                                    value={time}
+                                    onChangeText={(value) => setTime(value)}
                                     placeholder='Qual o horário?'
                                 />
                             </View>
                         </View>
 
-                        <RectButton style={styles.submitButton}>
+                        <RectButton onPress={handleFiltersSubmit} style={styles.submitButton}>
                             <Text style={styles.submitButtonText}>
                                 Filtrar
                             </Text>
@@ -74,9 +135,15 @@ const TeacherList = () => {
                     }
                 }
             >
-                <TeacherItem />
-                <TeacherItem />
-                <TeacherItem />
+                {teachers.map((item : TeacherData)=> {
+                  return (
+                    <TeacherItem 
+                        key={item.id} 
+                        teacher={item}
+                        favorited={favorites.includes(item.id)}
+                    />  
+                  )
+                })}
             </ScrollView>
         </View>
     )
